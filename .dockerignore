@@ -4,6 +4,8 @@ __pycache__/
 .git/
 .github/
 tests/
+monitoring/
+scripts/
 *.md
 .env
 .venv/
