@@ -1,6 +1,7 @@
 """Веб-сервіс для інференсу Wine з шаром моніторингу (Prometheus + drift + structlog)."""
 import logging
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import joblib
@@ -35,20 +36,17 @@ CLASS_NAMES = ["class_0", "class_1", "class_2"]
 setupLogging()
 logger = logging.getLogger("ml-api")
 
-app = FastAPI(
-    title="Wine ML API with Monitoring",
-    description="REST API для класифікації Wine з Prometheus-метриками та KS-детектором drift",
-    version="2.0.0",
-)
-
-# Глобальні стани — завантажуються одноразово у startup-хуку.
+# Глобальні стани — заповнюються у lifespan-хендлері при старті.
 model = None
 driftDetector: DriftDetector | None = None
 
 
-@app.on_event("startup")
 def loadModel() -> None:
-    """Завантажує модель та reference-вибірку, ініціалізує DriftDetector."""
+    """Завантажує модель + reference-вибірку, ініціалізує DriftDetector.
+
+    Викликається з lifespan-хендлера; тести можуть викликати напряму,
+    бо TestClient у нових версіях Starlette не гарантує тригер startup-події.
+    """
     global model, driftDetector
     if not MODEL_PATH.exists():
         MODEL_LOADED.set(0)
@@ -71,6 +69,22 @@ def loadModel() -> None:
             "reference_missing",
             extra={"event": "startup", "model_loaded": True, "drift_detector_ready": False},
         )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Сучасний FastAPI lifespan — замінник deprecated `@app.on_event('startup')`."""
+    loadModel()
+    yield
+    # shutdown: тут можна було б закрити ресурси, але модель тримається у пам'яті процесу
+
+
+app = FastAPI(
+    title="Wine ML API with Monitoring",
+    description="REST API для класифікації Wine з Prometheus-метриками та KS-детектором drift",
+    version="2.0.0",
+    lifespan=lifespan,
+)
 
 
 @app.middleware("http")
