@@ -8,7 +8,7 @@
 
 Проєкт є розширенням ML API з [`mlops-lab2-ml-api`](https://github.com/DashaD19/mlops-lab2-ml-api) шаром повноцінного спостереження (observability) та автоматичної детекції зсуву даних (data drift). На основі того самого Pipeline зі StandardScaler + SVC (датасет Wine з `scikit-learn`, варіант 2) додано:
 
-- `app/metrics.py` — 6 метрик Prometheus у власному `CollectorRegistry`: лічильники запитів і помилок, гістограми latency та confidence, gauge стану моделі, лічильники перевірок drift;
+- `app/metrics.py` — 7 метрик Prometheus у власному `CollectorRegistry`: лічильники запитів і помилок, гістограми latency та confidence, gauge стану моделі, лічильники перевірок та виявлень drift;
 - `GET /metrics` — endpoint у Prometheus exposition format, який автоматично віддає всі зареєстровані метрики;
 - `app/drift.py` — клас `DriftDetector` з KS-тестом (`scipy.stats.ks_2samp`) по кожній з 13 ознак Wine;
 - `POST /check-drift` — приймає батч живих спостережень (≥ 10 семплів × 13 ознак) і повертає прапор `drift_detected` разом з повним per-feature розкладом;
