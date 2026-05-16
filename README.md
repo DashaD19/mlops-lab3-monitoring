@@ -186,6 +186,18 @@ done
 
 Тоді у Prometheus виконати `rate(ml_predictions_total[1m])` — графік покаже зростання частоти прогнозів.
 
+Після scrape (інтервал 10 с) у `Status → Targets` ціль `ml-api` має бути **UP**:
+
+![Prometheus targets — ml-api UP](docs/prometheus_targets.png)
+
+Розподіл прогнозів за класами через PromQL `sum by (class_name) (ml_predictions_total)` після 55 запитів (30 / 15 / 10 на різні класи):
+
+![Predictions per class](docs/prometheus_graph_predictions.png)
+
+P95 latency через `histogram_quantile(0.95, rate(ml_prediction_latency_seconds_bucket[5m]))`:
+
+![P95 latency](docs/prometheus_graph_latency.png)
+
 ### Запуск тестів
 
 ```bash
